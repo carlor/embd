@@ -1,0 +1,8 @@
+<% import std.conv; %>
+<ul>
+  <% foreach(str; ["bob", "joe", "steve"]) { %>
+    <li><%= str %></li>
+  <% } %>
+</ul>
+
+Until: <%= to!string(this.until) %>

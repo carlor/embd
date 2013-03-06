@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>10.0.0</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{F6240294-640D-4FD7-8B6C-5F65A8E551C7}</ProjectGuid>
+    <PreferOneStepBuild>True</PreferOneStepBuild>
+    <UseDefaultCompiler>True</UseDefaultCompiler>
+    <IncrementalLinking>True</IncrementalLinking>
+    <Compiler>DMD2</Compiler>
+    <Includes>
+      <Includes>
+        <Path>source</Path>
+      </Includes>
+    </Includes>
+    <ExtraCompilerArguments>-Jviews</ExtraCompilerArguments>
+    <ExtraLinkerArguments>
+    </ExtraLinkerArguments>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>True</DebugSymbols>
+    <OutputPath>bin\Debug</OutputPath>
+    <Externalconsole>True</Externalconsole>
+    <Target>Executable</Target>
+    <OutputName>embd</OutputName>
+    <UnittestMode>False</UnittestMode>
+    <ObjectsDirectory>obj\Debug</ObjectsDirectory>
+    <DebugLevel>0</DebugLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="source\embd.d" />
+    <Compile Include="source\app.d" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="source\" />
+    <Folder Include="views\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="views\test.embd.html" />
+    <None Include="views\tutorial.embd.html" />
+  </ItemGroup>
+</Project>

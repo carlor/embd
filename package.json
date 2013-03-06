@@ -1,0 +1,9 @@
+{
+	"name": "embd",
+	"description": "Low-level API for embedding D code into text.",
+	"homepage": "http://github.com/carlor/embd",
+	"copyright": "Copyright © 2013 Nathan M. Swan",
+    "license": "MIT (Expat) License",
+	"authors": ["Nathan M. Swan"],
+	"dependencies": {}
+}
