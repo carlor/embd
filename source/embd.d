@@ -67,7 +67,118 @@ interface Context {
             mixin(createRenderingCode(embd_code, embd_start, embd_end, embd_evalCodes));
         }
     };
+
+    protected static string createRenderingCode(string embd_code, 
+                               string embd_start, string embd_end, 
+                               const(dchar)[] embd_evalCodes) {
+        // convert to dstring for slicing
+        dstring inCode = embd_code.to!dstring();
+        dstring startDelim = embd_start.to!dstring();
+        dstring endDelim = embd_end.to!dstring();
+        string outCode = "";
+
+        // two states: static content and dynamic content
+        dstring staticBuffer = "";
+        while (!inCode.empty) {
+            if (inCode.startsWith(startDelim)) {
+                outCode ~= `write(`~generateQuotesFor(staticBuffer)~`, dchar.init);`;
+                staticBuffer = "";
+                outCode ~= getDynamicContent(inCode, startDelim, endDelim, embd_evalCodes);
+            } else {
+                staticBuffer ~= inCode.front;
+                inCode.popFront();
+            }
+        }
+        if (staticBuffer.length) {
+            outCode ~= `write(`~generateQuotesFor(staticBuffer)~`, dchar.init);`;
+        }
+
+        return outCode.to!string();
+    }
 }
+
+
+version (Have_vibe_d)
+{
+    import vibe.core.stream;
+    import vibe.templ.utils;
+    import vibe.textfilter.html;
+
+    /** Renders an EMBD template to an output stream.
+
+        These functions provice means to render EMPD templates in a way similar
+        to the render!() function of vibe.d for rendering Diet templates.
+
+        Note that these functions are only available if "vibe-d" is available
+        as a dependency or if a "Have_vibe_d" version identifier is specified
+        manually.
+
+        Examples:
+
+            ---
+            string caption = "Hello, World!";
+            //res.renderEmbd!("test.embd", caption)();
+            res.bodyWriter.renderEmbdCompat!("test.embd", string, "caption")(caption);
+            ---
+    */
+    void renderEmbd(string FILE, ALIASES...)(OutputStream dst)
+    {
+
+        mixin(vibe.templ.utils.localAliases!(0, ALIASES));
+
+        class LocalContext : Context {
+            OutputStream output__;
+
+            mixin(renderer);
+
+            void write(string content, dchar eval_code)
+            {
+                if (eval_code == '=')
+                    filterHtmlEscape(output__, content);
+                else
+                    output__.write(content, false);
+            }
+        }
+
+        scope ctx = new LocalContext;
+        ctx.output__ = dst;
+        ctx.render!(import(FILE), `!=`, `<%`, `%>`)();
+    }
+
+    /// ditto
+    void renderEmbd(string FILE, ALIASES...)(HTTPServerResponse res, string content_type = "text/html; charset=UTF-8")
+    {
+        res.contentType = content_type;
+        renderEmbd!(FILE, ALIASES)(res.bodyWriter);
+    }
+
+    /// ditto
+    void renderEmbdCompat(string FILE, TYPES_AND_NAMES...)(OutputStream dst, ...)
+    {
+        import core.vararg;
+        import std.variant;
+        mixin(localAliasesCompat!(0, TYPES_AND_NAMES));
+
+        class LocalContext : Context {
+            OutputStream output__;
+
+            mixin(renderer);
+
+            void write(string content, dchar eval_code)
+            {
+                if (eval_code == '=')
+                    filterHtmlEscape(output__, content);
+                else
+                    output__.write(content, false);
+            }
+        }
+
+        scope ctx = new LocalContext;
+        ctx.output__ = dst;
+        ctx.render!(import(FILE), `!=`, `<%`, `%>`)();
+    }
+}
+
 
 private:
 unittest {
@@ -84,34 +195,6 @@ unittest {
 
     auto ctx = new MyContext();
     ctx.render!(import("test.embd.html"), `=`)();
-}
-
-string createRenderingCode(string embd_code, 
-                           string embd_start, string embd_end, 
-                           const(dchar)[] embd_evalCodes) {
-    // convert to dstring for slicing
-    dstring inCode = embd_code.to!dstring();
-    dstring startDelim = embd_start.to!dstring();
-    dstring endDelim = embd_end.to!dstring();
-    string outCode = "";
-
-    // two states: static content and dynamic content
-    dstring staticBuffer = "";
-    while (!inCode.empty) {
-        if (inCode.startsWith(startDelim)) {
-            outCode ~= `write(`~generateQuotesFor(staticBuffer)~`, dchar.init);`;
-            staticBuffer = "";
-            outCode ~= getDynamicContent(inCode, startDelim, endDelim, embd_evalCodes);
-        } else {
-            staticBuffer ~= inCode.front;
-            inCode.popFront();
-        }
-    }
-    if (staticBuffer.length) {
-        outCode ~= `write(`~generateQuotesFor(staticBuffer)~`, dchar.init);`;
-    }
-
-    return outCode.to!string();
 }
 
 string getDynamicContent(ref dstring inCode, 
