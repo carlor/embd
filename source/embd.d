@@ -112,6 +112,14 @@ version (Have_vibe_d)
         Note that these functions are only available if "vibe-d" is available
         as a dependency or if a "Have_vibe_d" version identifier is specified
         manually.
+
+        Examples:
+
+            ---
+            string caption = "Hello, World!";
+            //res.renderEmbd!("test.embd", caption)();
+            res.bodyWriter.renderEmbdCompat!("test.embd", string, "caption")(caption);
+            ---
     */
     void renderEmbd(string FILE, ALIASES...)(OutputStream dst)
     {
