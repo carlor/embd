@@ -97,6 +97,81 @@ interface Context {
     }
 }
 
+
+version (Have_vibe_d)
+{
+    import vibe.core.stream;
+    import vibe.templ.utils;
+    import vibe.textfilter.html;
+
+    /** Renders an EMBD template to an output stream.
+
+        These functions provice means to render EMPD templates in a way similar
+        to the render!() function of vibe.d for rendering Diet templates.
+
+        Note that these functions are only available if "vibe-d" is available
+        as a dependency or if a "Have_vibe_d" version identifier is specified
+        manually.
+    */
+    void renderEmbd(string FILE, ALIASES...)(OutputStream dst)
+    {
+
+        mixin(vibe.templ.utils.localAliases!(0, ALIASES));
+
+        class LocalContext : Context {
+            OutputStream output__;
+
+            mixin(renderer);
+
+            void write(string content, dchar eval_code)
+            {
+                if (eval_code == '=')
+                    filterHtmlEscape(output__, content);
+                else
+                    output__.write(content, false);
+            }
+        }
+
+        scope ctx = new LocalContext;
+        ctx.output__ = dst;
+        ctx.render!(import(FILE), `!=`, `<%`, `%>`)();
+    }
+
+    /// ditto
+    void renderEmbd(string FILE, ALIASES...)(HTTPServerResponse res, string content_type = "text/html; charset=UTF-8")
+    {
+        res.contentType = content_type;
+        renderEmbd!(FILE, ALIASES)(res.bodyWriter);
+    }
+
+    /// ditto
+    void renderEmbdCompat(string FILE, TYPES_AND_NAMES...)(OutputStream dst, ...)
+    {
+        import core.vararg;
+        import std.variant;
+        mixin(localAliasesCompat!(0, TYPES_AND_NAMES));
+
+        class LocalContext : Context {
+            OutputStream output__;
+
+            mixin(renderer);
+
+            void write(string content, dchar eval_code)
+            {
+                if (eval_code == '=')
+                    filterHtmlEscape(output__, content);
+                else
+                    output__.write(content, false);
+            }
+        }
+
+        scope ctx = new LocalContext;
+        ctx.output__ = dst;
+        ctx.render!(import(FILE), `!=`, `<%`, `%>`)();
+    }
+}
+
+
 private:
 unittest {
     static class MyContext : embd.Context {
