@@ -67,6 +67,34 @@ interface Context {
             mixin(createRenderingCode(embd_code, embd_start, embd_end, embd_evalCodes));
         }
     };
+
+    protected static string createRenderingCode(string embd_code, 
+                               string embd_start, string embd_end, 
+                               const(dchar)[] embd_evalCodes) {
+        // convert to dstring for slicing
+        dstring inCode = embd_code.to!dstring();
+        dstring startDelim = embd_start.to!dstring();
+        dstring endDelim = embd_end.to!dstring();
+        string outCode = "";
+
+        // two states: static content and dynamic content
+        dstring staticBuffer = "";
+        while (!inCode.empty) {
+            if (inCode.startsWith(startDelim)) {
+                outCode ~= `write(`~generateQuotesFor(staticBuffer)~`, dchar.init);`;
+                staticBuffer = "";
+                outCode ~= getDynamicContent(inCode, startDelim, endDelim, embd_evalCodes);
+            } else {
+                staticBuffer ~= inCode.front;
+                inCode.popFront();
+            }
+        }
+        if (staticBuffer.length) {
+            outCode ~= `write(`~generateQuotesFor(staticBuffer)~`, dchar.init);`;
+        }
+
+        return outCode.to!string();
+    }
 }
 
 private:
@@ -84,34 +112,6 @@ unittest {
 
     auto ctx = new MyContext();
     ctx.render!(import("test.embd.html"), `=`)();
-}
-
-string createRenderingCode(string embd_code, 
-                           string embd_start, string embd_end, 
-                           const(dchar)[] embd_evalCodes) {
-    // convert to dstring for slicing
-    dstring inCode = embd_code.to!dstring();
-    dstring startDelim = embd_start.to!dstring();
-    dstring endDelim = embd_end.to!dstring();
-    string outCode = "";
-
-    // two states: static content and dynamic content
-    dstring staticBuffer = "";
-    while (!inCode.empty) {
-        if (inCode.startsWith(startDelim)) {
-            outCode ~= `write(`~generateQuotesFor(staticBuffer)~`, dchar.init);`;
-            staticBuffer = "";
-            outCode ~= getDynamicContent(inCode, startDelim, endDelim, embd_evalCodes);
-        } else {
-            staticBuffer ~= inCode.front;
-            inCode.popFront();
-        }
-    }
-    if (staticBuffer.length) {
-        outCode ~= `write(`~generateQuotesFor(staticBuffer)~`, dchar.init);`;
-    }
-
-    return outCode.to!string();
 }
 
 string getDynamicContent(ref dstring inCode, 
