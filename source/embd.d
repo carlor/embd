@@ -64,37 +64,9 @@ interface Context {
                            const(dchar)[] embd_evalCodes=`=`,
                            string embd_start=`<%`, string embd_end=`%>`
                            )() {
-            mixin(createRenderingCode(embd_code, embd_start, embd_end, embd_evalCodes));
+            mixin(embd__createRenderingCode(embd_code, embd_start, embd_end, embd_evalCodes));
         }
     };
-
-    protected static string createRenderingCode(string embd_code, 
-                               string embd_start, string embd_end, 
-                               const(dchar)[] embd_evalCodes) {
-        // convert to dstring for slicing
-        dstring inCode = embd_code.to!dstring();
-        dstring startDelim = embd_start.to!dstring();
-        dstring endDelim = embd_end.to!dstring();
-        string outCode = "";
-
-        // two states: static content and dynamic content
-        dstring staticBuffer = "";
-        while (!inCode.empty) {
-            if (inCode.startsWith(startDelim)) {
-                outCode ~= `write(`~generateQuotesFor(staticBuffer)~`, dchar.init);`;
-                staticBuffer = "";
-                outCode ~= getDynamicContent(inCode, startDelim, endDelim, embd_evalCodes);
-            } else {
-                staticBuffer ~= inCode.front;
-                inCode.popFront();
-            }
-        }
-        if (staticBuffer.length) {
-            outCode ~= `write(`~generateQuotesFor(staticBuffer)~`, dchar.init);`;
-        }
-
-        return outCode.to!string();
-    }
 }
 
 
@@ -197,13 +169,42 @@ unittest {
     ctx.render!(import("test.embd.html"), `=`)();
 }
 
+// public so it can be accessed from the mixin
+public string embd__createRenderingCode(string embd_code, 
+                                        string embd_start, string embd_end, 
+                                        const(dchar)[] embd_evalCodes) {
+    // convert to dstring for slicing
+    dstring inCode = embd_code.to!dstring();
+    dstring startDelim = embd_start.to!dstring();
+    dstring endDelim = embd_end.to!dstring();
+    string outCode = "";
+
+    // two states: static content and dynamic content
+    dstring staticBuffer = "";
+    while (!inCode.empty) {
+        if (inCode.startsWith(startDelim)) {
+            outCode ~= `write(`~generateQuotesFor(staticBuffer)~`, dchar.init);`;
+            staticBuffer = "";
+            outCode ~= getDynamicContent(inCode, startDelim, endDelim, embd_evalCodes);
+        } else {
+            staticBuffer ~= inCode.front;
+            inCode.popFront();
+        }
+    }
+    if (staticBuffer.length) {
+        outCode ~= `write(`~generateQuotesFor(staticBuffer)~`, dchar.init);`;
+    }
+
+    return outCode.to!string();
+}
+
 string getDynamicContent(ref dstring inCode, 
                          dstring startDelim, dstring endDelim, 
                          const(dchar)[] evalCodes) {
     // TODO allow endDelim to appear in strings
     void notEmpty() {
         enforce(!inCode.empty, 
-                xformat("Starting '%s' not matched by closing '%s'.", startDelim, endDelim));
+                format("Starting '%s' not matched by closing '%s'.", startDelim, endDelim));
     }
 
     inCode = inCode[startDelim.length .. $];
@@ -228,7 +229,7 @@ string getDynamicContent(ref dstring inCode,
     if (evalCode == dchar.init) {
         return outCode;
     } else {
-        return xformat(`write(%s, '\u%.4x');`, outCode, evalCode);
+        return format(`write(%s, '\u%.4x');`, outCode, evalCode);
     }
 }
 
@@ -239,5 +240,5 @@ unittest {
 
 string generateQuotesFor(dstring buffer) {
     // convert to ubyte so it doesn't convert back into a range of dchars
-    return xformat(`x"%-(%.2x%)"c`, cast(immutable(ubyte)[])buffer.to!string());
+    return format(`x"%-(%.2x%)"c`, cast(immutable(ubyte)[])buffer.to!string());
 }
