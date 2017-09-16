@@ -73,8 +73,8 @@ interface Context {
 version (Have_vibe_d)
 {
     import vibe.core.stream : OutputStream;
-   	import vibe.stream.wrapper : streamOutputRange;
-   	import vibe.http.server : HTTPServerResponse;
+    import vibe.stream.wrapper : streamOutputRange;
+    import vibe.http.server : HTTPServerResponse;
 	import diet.input;
     import vibe.textfilter.html : filterHTMLEscape;
 
@@ -108,8 +108,8 @@ version (Have_vibe_d)
             void write(string content, dchar eval_code)
             {
                 if (eval_code == '=') {
-					auto buf = streamOutputRange!1024( output__);
-					filterHTMLEscape( buf, content);
+                    auto buf = streamOutputRange!1024( output__);
+                    filterHTMLEscape( buf, content);
                 } else
                     output__.write(content, false);
             }
@@ -144,8 +144,8 @@ version (Have_vibe_d)
             void write(string content, dchar eval_code)
             {
                 if (eval_code == '=') {
-					auto buf = streamOutputRange!1024( output__);
-					filterHTMLEscape( buf, content);
+                    auto buf = streamOutputRange!1024( output__);
+                    filterHTMLEscape( buf, content);
                 } else
                     output__.write(content, false);
             }
