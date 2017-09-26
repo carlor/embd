@@ -75,7 +75,7 @@ version (Have_vibe_d)
     import vibe.core.stream : OutputStream;
     import vibe.stream.wrapper : streamOutputRange;
     import vibe.http.server : HTTPServerResponse;
-	import diet.input;
+    import diet.input;
     import vibe.textfilter.html : filterHTMLEscape;
 
     /** Renders an EMBD template to an output stream.
@@ -98,7 +98,7 @@ version (Have_vibe_d)
     @safe
     void renderEmbd(string FILE, ALIASES...)(OutputStream dst)
     {
-    mixin( diet.input.localAliasesMixin!( 0, ALIASES));
+        mixin(diet.input.localAliasesMixin!(0, ALIASES));
 
         class LocalContext : Context {
             OutputStream output__;
@@ -108,10 +108,11 @@ version (Have_vibe_d)
             void write(string content, dchar eval_code)
             {
                 if (eval_code == '=') {
-                    auto buf = streamOutputRange!1024( output__);
-                    filterHTMLEscape( buf, content);
-                } else
+                    auto buf = streamOutputRange!1024(output__);
+                    filterHTMLEscape(buf, content);
+                } else {
                     output__.write(content, false);
+                }
             }
         }
 
@@ -144,10 +145,11 @@ version (Have_vibe_d)
             void write(string content, dchar eval_code)
             {
                 if (eval_code == '=') {
-                    auto buf = streamOutputRange!1024( output__);
-                    filterHTMLEscape( buf, content);
-                } else
+                    auto buf = streamOutputRange!1024(output__);
+                    filterHTMLEscape(buf, content);
+                } else {
                     output__.write(content, false);
+                }
             }
         }
 
@@ -165,7 +167,7 @@ unittest {
 
         void write(string content, dchar evalCode) {
             import std.stdio;
-            write(content);
+            std.stdio.write(content);
         }
 
         mixin(renderer);
